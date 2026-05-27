@@ -1,14 +1,14 @@
 package handler
 
 import (
+	"ce191383/task_management/utils"
 	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
-	"ce191383/task_management/utils"
 
-	"ce191383/task_management/entity"
-	"ce191383/task_management/service"
+	"ce191383/task_management/internal/entity"
+	"ce191383/task_management/internal/service"
 )
 
 type TaskHandler struct {
@@ -48,9 +48,14 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 func (h *TaskHandler) GetAllTasks(w http.ResponseWriter, r *http.Request) {
 
-	tasks := h.service.GetAll()
+	tasks, err := h.service.GetAll()
 
-	json.NewEncoder(w).Encode(tasks)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	utils.WriteSuccess(w, tasks)
 }
 
 func (h *TaskHandler) GetTaskByID(w http.ResponseWriter, r *http.Request) {
@@ -70,12 +75,12 @@ func (h *TaskHandler) GetTaskByID(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 
-		http.Error(w, err.Error(), http.StatusNotFound)
+		utils.WriteError(w, http.StatusNotFound, err.Error())
 
 		return
 	}
 
-	json.NewEncoder(w).Encode(task)
+	utils.WriteSuccess(w, task)
 }
 
 func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +116,7 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte("updated successfully"))
+	utils.WriteSuccess(w, "updated successfully")
 }
 
 func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
@@ -136,5 +141,5 @@ func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte("deleted successfully"))
+	utils.WriteSuccess(w, "deleted successfully")
 }

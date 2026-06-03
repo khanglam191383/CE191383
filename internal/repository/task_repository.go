@@ -7,7 +7,7 @@ import (
 )
 
 type TaskRepository interface {
-	Create(task entity.Task) entity.Task
+	Create(task entity.Task) (entity.Task, error)
 	GetAll() ([]entity.Task, error)
 	GetByID(id int) (*entity.Task, error)
 	Update(id int, updatedTask entity.Task) error
@@ -24,16 +24,16 @@ func NewTaskRepository(db *sql.DB) TaskRepository {
 	}
 }
 
-func (r *taskRepository) Create(task entity.Task) entity.Task {
+func (r *taskRepository) Create(task entity.Task) (entity.Task, error) {
 
 	query := "INSERT INTO tasks (project_id, title, description, status, assignee_id) VALUES ($1, $2, $3, $4, $5) RETURNING id"
 	
 	err := r.db.QueryRow(query, task.ProjectID, task.Title, task.Description, task.Status, task.AssigneeID).Scan(&task.ID)
 	if err !=nil {
-		panic(err)
+		return entity.Task{}, err
 	}
 
-	return task
+	return task, nil
 }
 
 func (r *taskRepository) GetAll() ([]entity.Task, error) {

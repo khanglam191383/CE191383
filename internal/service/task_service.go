@@ -51,7 +51,10 @@ func (s *taskService) Create(task entity.Task) (entity.Task, error) {
 		return entity.Task{}, errors.New("invalid status")
 	}
 
-	created := s.repo.Create(task)
+	created, err := s.repo.Create(task)
+	if err != nil {
+		return entity.Task{}, err
+	}
 
 	job := entity.NotificationJob{
 		TaskID:  created.ID,
@@ -60,17 +63,23 @@ func (s *taskService) Create(task entity.Task) (entity.Task, error) {
 		Retry:   0,
 	}
 
-	err := s.PushNotification(job)
+	err = s.PushNotification(job)
 	if err != nil {
 		fmt.Println("push job error:", err)
 	}
 
-	s.redis.Del(context.Background(), "tasks")
+	if s.redis != nil {
+		s.redis.Del(context.Background(), "tasks")
+	}
 
 	return created, nil
 }
 
 func (s *taskService) GetAll() ([]entity.Task, error) {
+	if s.redis == nil {
+		return s.repo.GetAll()
+	}
+
 	ctx := context.Background()
 	cacheKey := "tasks"
 
@@ -116,6 +125,9 @@ func (s *taskService) GetAll() ([]entity.Task, error) {
 }
 
 func (s *taskService) GetByID(id int) (*entity.Task, error) {
+	if s.redis == nil {
+		return s.repo.GetByID(id)
+	}
 
 	ctx := context.Background()
 	cacheKey := fmt.Sprintf("task:%d", id)
@@ -190,6 +202,10 @@ func (s *taskService) Delete(id int) error {
 }
 
 func (s *taskService) clearTaskCache(id int) {
+	if s.redis == nil {
+		return
+	}
+
 	ctx := context.Background()
 
 	s.redis.Del(ctx, "tasks")
@@ -197,6 +213,10 @@ func (s *taskService) clearTaskCache(id int) {
 }
 
 func (s *taskService) PushNotification(job entity.NotificationJob) error {
+	if s.redis == nil {
+		return nil
+	}
+
 	ctx := context.Background()
 
 	data, err := json.Marshal(job)

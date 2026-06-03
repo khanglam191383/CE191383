@@ -7,7 +7,7 @@ import(
 )
 
 type UserRepository interface{
-	Create(user entity.User)(entity.User, error)
+	Register(user entity.User)(entity.User, error)
 	GetAll()([]entity.User,error)
 	GetByID(id int)(*entity.User, error)
 	GetByEmail(email string) (*entity.User,error)
@@ -21,7 +21,7 @@ func NewUserRepository(db *sql.DB) UserRepository {
 	return &userRepository{db: db}
 }
 
-func (r*userRepository) Create(u entity.User) (entity.User,error){
+func (r*userRepository) Register(u entity.User) (entity.User,error){
 	query :="INSERT INTO users (email, password_hash, full_name) VALUES ($1, $2, $3) RETURNING id"
 
 	err:=r.db.QueryRow(query, u.Email, u.PasswordHash, u.FullName).Scan(&u.ID)

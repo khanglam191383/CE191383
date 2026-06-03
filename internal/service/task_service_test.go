@@ -1,229 +1,228 @@
 package service
 
 import (
-	"database/sql"
 	"testing"
 
-	_ "github.com/lib/pq"
-	"github.com/redis/go-redis/v9"
-
 	"ce191383/task_management/internal/entity"
-	"ce191383/task_management/internal/repository"
 )
 
-func setupTestDB() *sql.DB {
-	connStr := "postgres://postgres:password@localhost:5432/task_management_test?sslmode=disable"
+type mockTaskRepo struct{}
 
-	db, err := sql.Open("postgres", connStr)
+func (m *mockTaskRepo) Create(
+	task entity.Task,
+) (entity.Task, error) {
+
+	task.ID = 1
+
+	return task, nil
+}
+
+func (m *mockTaskRepo) GetAll() (
+	[]entity.Task,
+	error,
+) {
+
+	return []entity.Task{
+		{
+			ID:        1,
+			ProjectID: 1,
+			Title:     "Test Task",
+			Status:    "TODO",
+		},
+	}, nil
+}
+
+func (m *mockTaskRepo) GetByID(
+	id int,
+) (*entity.Task, error) {
+
+	return &entity.Task{
+		ID:     id,
+		Title:  "Test Task",
+		Status: "TODO",
+	}, nil
+}
+
+func (m *mockTaskRepo) Update(
+	id int,
+	task entity.Task,
+) error {
+
+	return nil
+}
+
+func (m *mockTaskRepo) Delete(
+	id int,
+) error {
+
+	return nil
+}
+
+func TestTaskCreateSuccess(t *testing.T) {
+
+	repo := &mockTaskRepo{}
+
+	service := NewTaskService(
+		repo,
+		nil,
+	)
+
+	_, err := service.Create(
+		entity.Task{
+			ProjectID:  1,
+			Title:      "Learn Go",
+			Status:     "TODO",
+			AssigneeID: 1,
+		},
+	)
+
 	if err != nil {
-		panic(err)
-	}
-
-	if err := db.Ping(); err != nil {
-		panic(err)
-	}
-
-	return db
-}
-
-func cleanDB(t *testing.T, db *sql.DB) {
-	if _, err := db.Exec("DELETE FROM tasks"); err != nil {
-		t.Fatalf("failed to clean db: %v", err)
+		t.Errorf("expected success")
 	}
 }
 
-func TestCreateTask_Success(t *testing.T) {
-	db := setupTestDB()
-	defer db.Close()
+func TestTaskCreateEmptyTitle(t *testing.T) {
 
-	cleanDB(t, db)
+	repo := &mockTaskRepo{}
 
-	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-	})
-	defer rdb.Close()
+	service := NewTaskService(
+		repo,
+		nil,
+	)
 
-	repo := repository.NewTaskRepository(db)
-	service := NewTaskService(repo, rdb)
-
-	task := entity.Task{
-		ProjectID:   1,
-		Title:       "Learn Go",
-		Description: "test",
-		Status:      "TODO",
-		AssigneeID:  1,
-	}
-
-	result, err := service.Create(task)
-
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if result.Title != "Learn Go" {
-		t.Errorf("expected Learn Go, got %s", result.Title)
-	}
-}
-
-func TestCreateTask_InvalidTitle(t *testing.T) {
-	db := setupTestDB()
-	defer db.Close()
-
-	cleanDB(t, db)
-
-	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-	})
-	defer rdb.Close()
-
-	repo := repository.NewTaskRepository(db)
-	service := NewTaskService(repo, rdb)
-
-	task := entity.Task{
-		ProjectID:  1,
-		Title:      "",
-		Status:     "TODO",
-		AssigneeID: 1,
-	}
-
-	_, err := service.Create(task)
+	_, err := service.Create(
+		entity.Task{
+			ProjectID:  1,
+			Title:      "",
+			Status:     "TODO",
+			AssigneeID: 1,
+		},
+	)
 
 	if err == nil {
-		t.Errorf("expected error for empty title")
+		t.Errorf("expected error")
 	}
 }
 
-func TestCreateTask_InvalidStatus(t *testing.T) {
-	db := setupTestDB()
-	defer db.Close()
+func TestTaskCreateInvalidStatus(t *testing.T) {
 
-	cleanDB(t, db)
+	repo := &mockTaskRepo{}
 
-	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-	})
-	defer rdb.Close()
+	service := NewTaskService(
+		repo,
+		nil,
+	)
 
-	repo := repository.NewTaskRepository(db)
-	service := NewTaskService(repo, rdb)
-
-	task := entity.Task{
-		ProjectID:  1,
-		Title:      "Test",
-		Status:     "INVALID",
-		AssigneeID: 1,
-	}
-
-	_, err := service.Create(task)
+	_, err := service.Create(
+		entity.Task{
+			ProjectID:  1,
+			Title:      "Test Task",
+			Status:     "INVALID",
+			AssigneeID: 1,
+		},
+	)
 
 	if err == nil {
-		t.Errorf("expected error for invalid status")
+		t.Errorf("expected error")
 	}
 }
 
-func TestUpdateTask_Success(t *testing.T) {
-	db := setupTestDB()
-	defer db.Close()
+func TestTaskGetAll(t *testing.T) {
 
-	cleanDB(t, db)
+	repo := &mockTaskRepo{}
 
-	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-	})
-	defer rdb.Close()
+	service := NewTaskService(
+		repo,
+		nil,
+	)
 
-	repo := repository.NewTaskRepository(db)
-	service := NewTaskService(repo, rdb)
-
-	created, err := service.Create(entity.Task{
-		ProjectID:  1,
-		Title:      "Old",
-		Status:     "TODO",
-		AssigneeID: 1,
-	})
+	tasks, err := service.GetAll()
 
 	if err != nil {
-		t.Fatalf("setup failed: %v", err)
+		t.Errorf("unexpected error: %v", err)
 	}
 
-	err = service.Update(created.ID, entity.Task{
-		ProjectID:  1,
-		Title:      "New",
-		Status:     "DONE",
-		AssigneeID: 1,
-	})
-
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
+	if len(tasks) != 1 {
+		t.Errorf("expected 1 task, got %d", len(tasks))
 	}
 }
 
-func TestUpdateTask_InvalidTitle(t *testing.T) {
-	db := setupTestDB()
-	defer db.Close()
+func TestTaskGetByID(t *testing.T) {
 
-	cleanDB(t, db)
+	repo := &mockTaskRepo{}
 
-	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-	})
-	defer rdb.Close()
+	service := NewTaskService(
+		repo,
+		nil,
+	)
 
-	repo := repository.NewTaskRepository(db)
-	service := NewTaskService(repo, rdb)
-
-	
-	created, err := service.Create(entity.Task{
-		ProjectID:  1,
-		Title:      "Temp",
-		Status:     "TODO",
-		AssigneeID: 1,
-	})
+	task, err := service.GetByID(1)
 
 	if err != nil {
-		t.Fatalf("setup failed: %v", err)
+		t.Errorf("unexpected error: %v", err)
 	}
 
-	err = service.Update(created.ID, entity.Task{
-		ProjectID:  1,
-		Title:      "",
-		Status:     "TODO",
-		AssigneeID: 1,
-	})
+	if task.ID != 1 {
+		t.Errorf("expected ID 1, got %d", task.ID)
+	}
+}
+
+func TestTaskUpdateSuccess(t *testing.T) {
+
+	repo := &mockTaskRepo{}
+
+	service := NewTaskService(
+		repo,
+		nil,
+	)
+
+	err := service.Update(
+		1,
+		entity.Task{
+			Title:  "Updated Task",
+			Status: "IN_PROGRESS",
+		},
+	)
+
+	if err != nil {
+		t.Errorf("expected success")
+	}
+}
+
+func TestTaskDeleteSuccess(t *testing.T) {
+
+	repo := &mockTaskRepo{}
+
+	service := NewTaskService(
+		repo,
+		nil,
+	)
+
+	err := service.Delete(1)
+
+	if err != nil {
+		t.Errorf("expected success")
+	}
+}
+
+func TestTaskUpdateEmptyTitle(t *testing.T) {
+
+	repo := &mockTaskRepo{}
+
+	service := NewTaskService(
+		repo,
+		nil,
+	)
+
+	err := service.Update(
+		1,
+		entity.Task{
+			Title:  "",
+			Status: "TODO",
+		},
+	)
 
 	if err == nil {
-		t.Errorf("expected error for empty title")
-	}
-}
-
-func TestDeleteTask(t *testing.T) {
-	db := setupTestDB()
-	defer db.Close()
-
-	cleanDB(t, db)
-
-	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-	})
-	defer rdb.Close()
-
-	repo := repository.NewTaskRepository(db)
-	service := NewTaskService(repo, rdb)
-
-	created, err := service.Create(entity.Task{
-		ProjectID:  1,
-		Title:      "To be deleted",
-		Status:     "TODO",
-		AssigneeID: 1,
-	})
-
-	if err != nil {
-		t.Fatalf("setup failed: %v", err)
-	}
-
-	err = service.Delete(created.ID)
-
-	if err != nil {
-		t.Errorf("expected no error, got %v", err)
+		t.Errorf("expected error")
 	}
 }

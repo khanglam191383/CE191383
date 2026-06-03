@@ -1,6 +1,6 @@
 package handler
 
-import(
+import (
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -9,7 +9,7 @@ import(
 	"ce191383/task_management/internal/service"
 )
 
-type CommentHandler struct{
+type CommentHandler struct {
 	service service.CommentService
 }
 
@@ -25,7 +25,7 @@ func NewCommentHandler(
 func (h *CommentHandler) CreateComment(
 	w http.ResponseWriter,
 	r *http.Request,
-){
+) {
 
 	var comment entity.Comment
 
@@ -37,9 +37,9 @@ func (h *CommentHandler) CreateComment(
 
 	result, err := h.service.Create(comment)
 
-	if err != nil{
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return 
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -47,10 +47,10 @@ func (h *CommentHandler) CreateComment(
 	json.NewEncoder(w).Encode(result)
 }
 
-func (h*CommentHandler) GetCommentsByTaskID(
+func (h *CommentHandler) GetCommentsByTaskID(
 	w http.ResponseWriter,
 	r *http.Request,
-){
+) {
 	taskIDStr := r.URL.Query().Get("task_id")
 
 	taskID, err := strconv.Atoi(taskIDStr)
@@ -63,7 +63,7 @@ func (h*CommentHandler) GetCommentsByTaskID(
 	comments, err := h.service.GetByTaskID(taskID)
 
 	if err != nil {
-		http .Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 

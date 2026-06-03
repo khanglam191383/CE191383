@@ -42,7 +42,7 @@ func (s *commentService) Create(
 	}
 
 	event := map[string]interface{}{
-		"even":    "comment_created",
+		"event":   "comment_created",
 		"task_id": createdComment.TaskID,
 		"content": createdComment.Content,
 	}
@@ -51,7 +51,7 @@ func (s *commentService) Create(
 
 	websocket.Broadcast(data)
 
-	return s.repo.Create(comment)
+	return createdComment, nil
 }
 
 func (s *commentService) GetByTaskID(taskID int) ([]entity.Comment, error) {

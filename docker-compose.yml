@@ -21,5 +21,16 @@ services:
     ports:
       - "6378:6379"    
 
+  api:
+    build: .
+    container_name: task_api
+    restart: always
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "8080:8080"    
+
+
 volumes:
   pgdata:

@@ -55,7 +55,7 @@ jobs:
           psql -h localhost -p 5433 -U admin -d taskdb -f migrations/000001_create_users_table.up.sql
           psql -h localhost -p 5433 -U admin -d taskdb -f migrations/000002_create_projects_table.up.sql
           psql -h localhost -p 5433 -U admin -d taskdb -f migrations/000003_create_tasks_table.up.sql
-
+          psql -h localhost -p 5433 -U admin -d taskdb -f migrations/000004_create_comments_table.up.sql
       - name: Run go vet
         run: go vet ./...
 

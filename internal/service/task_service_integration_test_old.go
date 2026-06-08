@@ -12,7 +12,7 @@ import (
 )
 
 func setupTestDB() *sql.DB {
-	connStr := "postgres://postgres:password@localhost:5432/task_management_test?sslmode=disable"
+	connStr := "host=localhost port=5433 user=admin password=admin123 dbname=taskdb sslmode=disable"
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -39,7 +39,7 @@ func TestCreateTask_Success(t *testing.T) {
 	cleanDB(t, db)
 
 	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+		Addr: "localhost:6378",
 	})
 	defer rdb.Close()
 
@@ -72,7 +72,7 @@ func TestCreateTask_InvalidTitle(t *testing.T) {
 	cleanDB(t, db)
 
 	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+		Addr: "localhost:6378",
 	})
 	defer rdb.Close()
 
@@ -100,7 +100,7 @@ func TestCreateTask_InvalidStatus(t *testing.T) {
 	cleanDB(t, db)
 
 	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+		Addr: "localhost:6378",
 	})
 	defer rdb.Close()
 
@@ -128,7 +128,7 @@ func TestUpdateTask_Success(t *testing.T) {
 	cleanDB(t, db)
 
 	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+		Addr: "localhost:6378",
 	})
 	defer rdb.Close()
 
@@ -165,7 +165,7 @@ func TestUpdateTask_InvalidTitle(t *testing.T) {
 	cleanDB(t, db)
 
 	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+		Addr: "localhost:6378",
 	})
 	defer rdb.Close()
 
@@ -203,7 +203,7 @@ func TestDeleteTask(t *testing.T) {
 	cleanDB(t, db)
 
 	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+		Addr: "localhost:6378",
 	})
 	defer rdb.Close()
 
